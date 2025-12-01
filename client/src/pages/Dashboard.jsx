@@ -137,7 +137,7 @@ import Sidebar from '../components/Sidebar';
 import SnippetForm from '../components/SnippetForm';
 import SnippetList from '../components/SnippetList';
 
-const API_BASE = 'http://localhost:5000/api/snippets';
+const API_BASE = 'https://codecache-m8yl.onrender.com/api/snippets';
 
 export default function Dashboard({ username, handleLogout }) {
   // --- STATE ---
