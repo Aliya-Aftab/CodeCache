@@ -1,7 +1,7 @@
 # Dependency directories
 /node_modules
 
-# Environment variables and secrets (DO NOT PUSH YOUR MONGO URI)
+# Environment variables and secrets 
 .env
 
 # Logs and temporary files
