@@ -2,40 +2,52 @@
 import React, { useState } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import { Toaster, toast } from 'react-hot-toast';
 
-
-const API_BASE = 'https://codecache-m8yl.onrender.com/api/snippets'; 
-
+//   Auth Routes
+const API_BASE = 'https://codecache-m8yl.onrender.com/api'; 
+// const API_BASE = 'http://localhost:5000/api';
 export default function CodeCache() {
-  // --- GLOBAL AUTH STATE ---
-  const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('is_logged_in') === 'true');
-  const [username, setUsername] = useState(sessionStorage.getItem('username') || '');
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('token') ? true : false);
+  const [user, setUser] = useState(sessionStorage.getItem('user') || '');
   const [loading, setLoading] = useState(false);
 
-  // --- HANDLERS ---
-  const handleLogin = async (e) => { // Made async to handle the fetch call
-    e.preventDefault();
-    if(!username.trim()) return alert("Enter username");
+  // ---AUTH HANDLER (Handles both Login and Register) ---
+  const handleAuth = async (type, formData) => {
+    // type is either 'login' or 'register'
+    const endpoint = type === 'login' ? '/auth/login' : '/auth/register';
     
     setLoading(true);
 
     try {
-      // 1. WAKE-UP PING: Send a quick request to the sleeping Render server.
-      await fetch(API_BASE).catch(err => {
-        // We catch and ignore the timeout error, as the goal is just to start the server's wake-up process.
-        console.warn("Render wake-up ping sent.");
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Authentication failed");
+
+      if (type === 'register') {
+        toast.success("Account created! You can now login.");
+        setLoading(false);
+        return true; // Success flag
+      } 
       
-      // 2. Pause: Gives the server a moment to warm up before the dashboard loads.
-      await new Promise(resolve => setTimeout(resolve, 500)); 
-      
-      // 3. Complete Login
-      sessionStorage.setItem('is_logged_in', 'true');
-      sessionStorage.setItem('username', username);
-      setIsAuthenticated(true);
+      // If Login Success:
+      if (type === 'login') {
+        sessionStorage.setItem('token', data.token); // Save the Key
+        sessionStorage.setItem('user', data.username); // Save the Name
+        setUser(data.username);
+        setIsAuthenticated(true);
+        toast.success("Welcome back!");
+      }
 
     } catch (err) {
-      console.error("Login process failed:", err);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -44,25 +56,42 @@ export default function CodeCache() {
   const handleLogout = () => {
     sessionStorage.clear();
     setIsAuthenticated(false);
-    setUsername(''); 
+    setUser(''); 
+    toast.success("Logged out");
   };
 
-  // --- ROUTING LOGIC ---
-  if (!isAuthenticated) {
-    return (
-      <Login 
-        username={username} 
-        setUsername={setUsername} 
-        handleLogin={handleLogin} 
-        loading={loading} 
-      />
-    );
-  }
-
   return (
-    <Dashboard 
-      username={username} 
-      handleLogout={handleLogout} 
-    />
+    <>
+      <Toaster 
+  position="top-center" 
+  toastOptions={{
+    success: { icon: null },
+    error: { icon: null },
+    loading: { icon: null },
+    style: {
+      background: '#0f172a', 
+      color: '#e2e8f0',      
+      border: '1px solid #334155', 
+      borderRadius: '4px',   
+      padding: '12px 16px',
+      fontSize: '13px',
+      fontFamily: 'monospace', 
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+    },
+  }}
+/>
+
+      {!isAuthenticated ? (
+        <Login 
+          handleAuth={handleAuth} // Passing the handler
+          loading={loading} 
+        />
+      ) : (
+        <Dashboard 
+          username={user} 
+          handleLogout={handleLogout} 
+        />
+      )}
+    </>
   );
 }

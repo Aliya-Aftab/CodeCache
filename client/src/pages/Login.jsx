@@ -1,12 +1,11 @@
 import React from 'react';
 import LoginScreen from '../components/LoginScreen'; 
 
-export default function Login({ username, setUsername, handleLogin, loading }) {
+
+export default function Login({ handleAuth, loading }) {
   return (
     <LoginScreen 
-      username={username}
-      setUsername={setUsername}
-      handleLogin={handleLogin}
+      handleAuth={handleAuth} 
       loading={loading}
     />
   );
